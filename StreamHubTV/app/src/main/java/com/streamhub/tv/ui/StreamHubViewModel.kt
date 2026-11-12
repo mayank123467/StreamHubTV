@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.streamhub.tv.data.ContentRepository
 import com.streamhub.tv.model.MediaItem
+import com.streamhub.tv.model.OttPlatform
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 data class HubUiState(
     val isLoading: Boolean = true,
     val hasApiKeys: Boolean = false,
+    val selectedPlatform: OttPlatform? = null,
     val latest: List<MediaItem> = emptyList(),
     val mostRated: List<MediaItem> = emptyList(),
     val forYou: List<MediaItem> = emptyList(),
@@ -25,19 +27,34 @@ data class HubUiState(
 
 class StreamHubViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = ContentRepository(app)
-    private val _state = MutableStateFlow(HubUiState(selectedGenres = repo.getSelectedGenres(), hasApiKeys = repo.hasApiKeys()))
+    private val _state = MutableStateFlow(
+        HubUiState(selectedGenres = repo.getSelectedGenres(), hasApiKeys = repo.hasApiKeys())
+    )
     val state: StateFlow<HubUiState> = _state.asStateFlow()
 
     init {
         refresh()
     }
 
+    fun selectPlatform(platform: OttPlatform?) {
+        val next = if (_state.value.selectedPlatform == platform) null else platform
+        _state.value = _state.value.copy(selectedPlatform = next)
+        refresh()
+    }
+
     fun refresh() {
+        val currentPlatform = _state.value.selectedPlatform
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
-            val latestDeferred = async { repo.fetchLatestOtt() }
-            val ratedDeferred = async { repo.fetchMostRatedOtt() }
-            val ytDeferred = async { repo.fetchYouTubeTrending() }
+            val latestDeferred = async { repo.fetchLatestOtt(currentPlatform) }
+            val ratedDeferred = async { repo.fetchMostRatedOtt(currentPlatform) }
+            val ytDeferred = async {
+                if (currentPlatform == null || currentPlatform == OttPlatform.YOUTUBE) {
+                    repo.fetchYouTubeTrending()
+                } else {
+                    emptyList()
+                }
+            }
 
             val latest = latestDeferred.await()
             val rated = ratedDeferred.await()
