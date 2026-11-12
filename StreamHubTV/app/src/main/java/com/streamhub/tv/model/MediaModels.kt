@@ -15,6 +15,20 @@ enum class OttPlatform(
     JIO_TV("JioTV", "com.jio.jioplay.tv", "com.jio.media.jiotv", null, "https://jiotv.com")
 }
 
+enum class AppLanguage(
+    val label: String,
+    val isoCode: String?,
+    val tmdbLocale: String
+) {
+    ALL("All Languages", null, "en-IN"),
+    HINDI("Hindi", "hi", "hi-IN"),
+    GUJARATI("Gujarati", "gu", "gu-IN"),
+    ENGLISH("English", "en", "en-US"),
+    TAMIL("Tamil", "ta", "ta-IN"),
+    TELUGU("Telugu", "te", "te-IN"),
+    MARATHI("Marathi", "mr", "mr-IN")
+}
+
 data class MediaItem(
     val id: String,
     val title: String,
