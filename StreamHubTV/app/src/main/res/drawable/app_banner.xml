@@ -1,7 +1,22 @@
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <gradient
-        android:startColor="#141E30"
-        android:endColor="#243B55"
-        android:angle="45" />
-    <size android:width="320dp" android:height="180dp" />
-</shape>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path
+        android:fillColor="#0B1120"
+        android:pathData="M0,0h320v180h-320z" />
+    <path
+        android:fillColor="#1E3A8A"
+        android:fillAlpha="0.45"
+        android:pathData="M200,0h120v180h-160z" />
+    <path
+        android:fillColor="#2563EB"
+        android:pathData="M160,90m-44,0a44,44 0,1 1,88 0a44,44 0,1 1,-88 0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M146,68l38,22l-38,22z" />
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M48,148h224c3.31,0 6,2.69 6,6s-2.69,6 -6,6H48c-3.31,0 -6,-2.69 -6,-6S44.69,148 48,148z" />
+</vector>
