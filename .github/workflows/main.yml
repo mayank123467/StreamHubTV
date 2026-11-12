@@ -19,8 +19,8 @@ jobs:
         with:
           gradle-version: '8.7'
       - run: |
-          echo "TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}" >> local.properties
-          echo "YOUTUBE_API_KEY=${{ secrets.YOUTUBE_API_KEY }}" >> local.properties
+          echo "TMDB_API_KEY=${{ secrets.TMDB_API_KEY || secrets.IMDB }}" >> local.properties
+          echo "YOUTUBE_API_KEY=${{ secrets.YOUTUBE_API_KEY || secrets.YOUTUBE }}" >> local.properties
       - run: gradle assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
         with:
