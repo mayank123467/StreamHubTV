@@ -1,6 +1,7 @@
 package com.streamhub.tv.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -76,7 +77,7 @@ fun MainScreen(viewModel: StreamHubViewModel) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "StreamHub TV",
                                 style = MaterialTheme.typography.headlineLarge,
@@ -84,8 +85,8 @@ fun MainScreen(viewModel: StreamHubViewModel) {
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = if (state.hasApiKeys) "ZEE5 • SonyLIV • Prime Video • JioHotstar • YouTube • JioTV"
-                                else "Demo Mode — Add TMDB & YouTube keys in GitHub Secrets",
+                                text = state.selectedPlatform?.let { "Showing: ${it.displayName}" }
+                                    ?: "All OTT Platforms",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color(0xFF94A3B8)
                             )
@@ -116,17 +117,67 @@ fun MainScreen(viewModel: StreamHubViewModel) {
 
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(
-                            text = "Your OTT Apps",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.White
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Filter by OTT App",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White
+                            )
+                            state.selectedPlatform?.let { selected ->
+                                Button(
+                                    onClick = { AppLauncher.openPlatform(context, selected) },
+                                    colors = ButtonDefaults.colors(containerColor = platformAccent(selected))
+                                ) {
+                                    Text("Open ${selected.displayName} App", color = Color.White)
+                                }
+                            }
+                        }
+
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                            item {
+                                val isAll = state.selectedPlatform == null
+                                Card(
+                                    onClick = { viewModel.selectPlatform(null) },
+                                    modifier = Modifier
+                                        .width(120.dp)
+                                        .height(86.dp)
+                                        .then(
+                                            if (isAll) Modifier.border(2.dp, Color.White, RoundedCornerShape(12.dp))
+                                            else Modifier
+                                        )
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color(0xFF1E293B)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "All OTT",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+
                             items(OttPlatform.entries) { platform ->
                                 val accent = platformAccent(platform)
+                                val isSelected = state.selectedPlatform == platform
                                 Card(
-                                    onClick = { AppLauncher.openPlatform(context, platform) },
-                                    modifier = Modifier.width(190.dp).height(86.dp)
+                                    onClick = { viewModel.selectPlatform(platform) },
+                                    modifier = Modifier
+                                        .width(190.dp)
+                                        .height(86.dp)
+                                        .then(
+                                            if (isSelected) Modifier.border(2.dp, Color.White, RoundedCornerShape(12.dp))
+                                            else Modifier
+                                        )
                                 ) {
                                     Row(
                                         modifier = Modifier
@@ -176,6 +227,33 @@ fun MainScreen(viewModel: StreamHubViewModel) {
                     }
                 }
 
+                if (state.selectedPlatform == OttPlatform.JIO_TV) {
+                    item {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = SurfaceDefaults.colors(containerColor = Color(0xFF161D2E))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(20.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("JioTV Live Channels", style = MaterialTheme.typography.titleMedium, color = Color.White)
+                                    Text("Live TV channels stream directly inside the JioTV app.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF94A3B8))
+                                }
+                                Button(
+                                    onClick = { AppLauncher.openPlatform(context, OttPlatform.JIO_TV) },
+                                    colors = ButtonDefaults.colors(containerColor = platformAccent(OttPlatform.JIO_TV))
+                                ) {
+                                    Text("Launch JioTV", color = Color.White)
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if (state.forYou.isNotEmpty()) {
                     item { ContentRow("My Interested Content", state.forYou) { viewModel.selectItem(it) } }
                 }
@@ -214,7 +292,7 @@ fun MainScreen(viewModel: StreamHubViewModel) {
                                 color = Color(0xFF60A5FA)
                             )
                             Text(
-                                item.overview.ifBlank { "Open in ${item.platform.displayName} on your TV." },
+                                item.overview.ifBlank { "Open in ${item.platform.displayName} on your device." },
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color(0xFFD1D5DB),
                                 maxLines = 4,
@@ -312,34 +390,4 @@ private fun ContentRow(
                                 }
                             }
 
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.BottomStart)
-                                    .padding(6.dp)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(accent)
-                                    .padding(horizontal = 7.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = item.platform.displayName,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Color.White
-                                )
-                            }
-                        }
-
-                        Column(modifier = Modifier.padding(10.dp)) {
-                            Text(
-                                text = item.title,
-                                style = MaterialTheme.typography.labelLarge,
-                                color = Color.White,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+                         
