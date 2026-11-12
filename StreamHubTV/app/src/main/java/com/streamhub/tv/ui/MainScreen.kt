@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -12,9 +13,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.*
@@ -24,6 +27,33 @@ import com.streamhub.tv.model.MediaItem
 import com.streamhub.tv.model.OttPlatform
 import com.streamhub.tv.util.AppLauncher
 
+private fun platformAccent(platform: OttPlatform): Color = when (platform) {
+    OttPlatform.JIO_HOTSTAR -> Color(0xFF0F4C81)
+    OttPlatform.PRIME_VIDEO -> Color(0xFF0078B8)
+    OttPlatform.ZEE5 -> Color(0xFF7B2CBF)
+    OttPlatform.SONY_LIV -> Color(0xFFEA580C)
+    OttPlatform.YOUTUBE -> Color(0xFFDC2626)
+    OttPlatform.JIO_TV -> Color(0xFFE11D48)
+}
+
+private fun platformShortTag(platform: OttPlatform): String = when (platform) {
+    OttPlatform.JIO_HOTSTAR -> "JH"
+    OttPlatform.PRIME_VIDEO -> "PV"
+    OttPlatform.ZEE5 -> "Z5"
+    OttPlatform.SONY_LIV -> "SL"
+    OttPlatform.YOUTUBE -> "YT"
+    OttPlatform.JIO_TV -> "JT"
+}
+
+private fun platformSubtitle(platform: OttPlatform): String = when (platform) {
+    OttPlatform.JIO_HOTSTAR -> "Sports & Specials"
+    OttPlatform.PRIME_VIDEO -> "Originals & Movies"
+    OttPlatform.ZEE5 -> "Hindi & Regional"
+    OttPlatform.SONY_LIV -> "Shows & Thrillers"
+    OttPlatform.YOUTUBE -> "Trending & Videos"
+    OttPlatform.JIO_TV -> "Live TV Channels"
+}
+
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun MainScreen(viewModel: StreamHubViewModel) {
@@ -32,7 +62,7 @@ fun MainScreen(viewModel: StreamHubViewModel) {
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        colors = SurfaceDefaults.colors(containerColor = Color(0xFF0F1117))
+        colors = SurfaceDefaults.colors(containerColor = Color(0xFF0B0F19))
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
@@ -50,13 +80,14 @@ fun MainScreen(viewModel: StreamHubViewModel) {
                             Text(
                                 text = "StreamHub TV",
                                 style = MaterialTheme.typography.headlineLarge,
-                                color = Color.White
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = if (state.hasApiKeys) "ZEE5 • SonyLIV • Prime • Hotstar • YouTube • JioTV"
-                                else "Demo Mode — Add TMDB & YouTube API keys in GitHub Secrets",
+                                text = if (state.hasApiKeys) "ZEE5 • SonyLIV • Prime Video • JioHotstar • YouTube • JioTV"
+                                else "Demo Mode — Add TMDB & YouTube keys in GitHub Secrets",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFF9AA0A6)
+                                color = Color(0xFF94A3B8)
                             )
                         }
                         Button(onClick = { viewModel.toggleInterestPicker(!state.showInterestPicker) }) {
@@ -73,7 +104,7 @@ fun MainScreen(viewModel: StreamHubViewModel) {
                                 Button(
                                     onClick = { viewModel.toggleGenre(id) },
                                     colors = ButtonDefaults.colors(
-                                        containerColor = if (selected) Color(0xFF2563EB) else Color(0xFF232733)
+                                        containerColor = if (selected) Color(0xFF2563EB) else Color(0xFF1E293B)
                                     )
                                 ) {
                                     Text(if (selected) "✓ $name" else name, color = Color.White)
@@ -84,15 +115,61 @@ fun MainScreen(viewModel: StreamHubViewModel) {
                 }
 
                 item {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Quick Launch Apps", style = MaterialTheme.typography.titleMedium, color = Color.White)
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            text = "Your OTT Apps",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.White
+                        )
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                             items(OttPlatform.entries) { platform ->
-                                Button(
+                                val accent = platformAccent(platform)
+                                Card(
                                     onClick = { AppLauncher.openPlatform(context, platform) },
-                                    colors = ButtonDefaults.colors(containerColor = Color(0xFF1E2433))
+                                    modifier = Modifier.width(190.dp).height(86.dp)
                                 ) {
-                                    Text(platform.displayName, color = Color.White)
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(
+                                                Brush.horizontalGradient(
+                                                    listOf(accent.copy(alpha = 0.85f), Color(0xFF1E293B))
+                                                )
+                                            )
+                                            .padding(horizontal = 14.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(44.dp)
+                                                .clip(CircleShape)
+                                                .background(Color.White.copy(alpha = 0.18f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = platformShortTag(platform),
+                                                style = MaterialTheme.typography.titleSmall,
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                        Column {
+                                            Text(
+                                                text = platform.displayName,
+                                                style = MaterialTheme.typography.titleSmall,
+                                                color = Color.White,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                            Text(
+                                                text = platformSubtitle(platform),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = Color(0xFFE2E8F0),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -114,6 +191,7 @@ fun MainScreen(viewModel: StreamHubViewModel) {
             }
 
             state.selectedItem?.let { item ->
+                val accent = platformAccent(item.platform)
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -121,9 +199,9 @@ fun MainScreen(viewModel: StreamHubViewModel) {
                     contentAlignment = Alignment.Center
                 ) {
                     Surface(
-                        modifier = Modifier.width(540.dp).padding(24.dp),
+                        modifier = Modifier.width(560.dp).padding(24.dp),
                         shape = RoundedCornerShape(16.dp),
-                        colors = SurfaceDefaults.colors(containerColor = Color(0xFF1A1E29))
+                        colors = SurfaceDefaults.colors(containerColor = Color(0xFF161D2E))
                     ) {
                         Column(
                             modifier = Modifier.padding(24.dp),
@@ -143,14 +221,15 @@ fun MainScreen(viewModel: StreamHubViewModel) {
                                 overflow = TextOverflow.Ellipsis
                             )
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Button(onClick = {
-                                    AppLauncher.openPlatform(context, item.platform, item.deepLinkUrl)
-                                }) {
-                                    Text("Open in ${item.platform.displayName}")
+                                Button(
+                                    onClick = { AppLauncher.openPlatform(context, item.platform, item.deepLinkUrl) },
+                                    colors = ButtonDefaults.colors(containerColor = accent)
+                                ) {
+                                    Text("Watch on ${item.platform.displayName}", color = Color.White)
                                 }
                                 Button(
                                     onClick = { viewModel.selectItem(null) },
-                                    colors = ButtonDefaults.colors(containerColor = Color(0xFF374151))
+                                    colors = ButtonDefaults.colors(containerColor = Color(0xFF334155))
                                 ) {
                                     Text("Close", color = Color.White)
                                 }
@@ -174,48 +253,88 @@ private fun ContentRow(
         Text(title, style = MaterialTheme.typography.titleMedium, color = Color.White)
         LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             items(items, key = { it.id }) { item ->
+                val accent = platformAccent(item.platform)
                 Card(
                     onClick = { onSelect(item) },
-                    modifier = Modifier.width(170.dp).height(240.dp)
+                    modifier = Modifier.width(176.dp).height(252.dp)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color(0xFF1C202B))
+                            .background(Color(0xFF161D2E))
                     ) {
-                        if (item.imageUrl.isNotBlank()) {
-                            AsyncImage(
-                                model = item.imageUrl,
-                                contentDescription = item.title,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(165.dp)
-                                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
-                            )
-                        } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(175.dp)
+                        ) {
+                            if (item.imageUrl.isNotBlank()) {
+                                AsyncImage(
+                                    model = item.imageUrl,
+                                    contentDescription = item.title,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            Brush.verticalGradient(
+                                                listOf(accent.copy(alpha = 0.8f), Color(0xFF1E293B))
+                                            )
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = platformShortTag(item.platform),
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            if (item.rating > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(6.dp)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(Color(0xCC0F172A))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = "★ ${String.format("%.1f", item.rating)}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color(0xFFFACC15)
+                                    )
+                                }
+                            }
+
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(165.dp)
-                                    .background(Color(0xFF283044)),
-                                contentAlignment = Alignment.Center
+                                    .align(Alignment.BottomStart)
+                                    .padding(6.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(accent)
+                                    .padding(horizontal = 7.dp, vertical = 2.dp)
                             ) {
-                                Text(item.platform.displayName, color = Color(0xFF93C5FD))
+                                Text(
+                                    text = item.platform.displayName,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White
+                                )
                             }
                         }
-                        Column(modifier = Modifier.padding(8.dp)) {
+
+                        Column(modifier = Modifier.padding(10.dp)) {
                             Text(
                                 text = item.title,
                                 style = MaterialTheme.typography.labelLarge,
                                 color = Color.White,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                text = item.platform.displayName,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color(0xFF9AA0A6)
                             )
                         }
                     }
