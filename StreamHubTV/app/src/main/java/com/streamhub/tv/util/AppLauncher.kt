@@ -9,27 +9,42 @@ import com.streamhub.tv.model.OttPlatform
 object AppLauncher {
     fun openPlatform(context: Context, platform: OttPlatform, url: String? = null) {
         val pm = context.packageManager
+
         if (!url.isNullOrBlank() && platform == OttPlatform.YOUTUBE) {
-            try {
-                val ytIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-                    setPackage(platform.packageName)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(ytIntent)
-                return
-            } catch (_: Exception) { }
+            for (pkg in listOf(platform.packageName, platform.mobilePackageName)) {
+                try {
+                    val ytIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                        setPackage(pkg)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(ytIntent)
+                    return
+                } catch (_: Exception) { }
+            }
         }
 
-        val leanback = pm.getLeanbackLaunchIntentForPackage(platform.packageName)
+        val launchIntent = pm.getLeanbackLaunchIntentForPackage(platform.packageName)
+            ?: pm.getLaunchIntentForPackage(platform.mobilePackageName)
             ?: pm.getLaunchIntentForPackage(platform.packageName)
 
-        if (leanback != null) {
-            leanback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(leanback)
-        } else {
+        if (launchIntent != null) {
+            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(launchIntent)
+            return
+        }
+
+        try {
+            val webIntent = Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse(url?.takeIf { it.isNotBlank() } ?: platform.fallbackWebUrl)
+            ).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(webIntent)
+        } catch (_: Exception) {
             Toast.makeText(
                 context,
-                "${platform.displayName} is not installed on this TV.",
+                "${platform.displayName} is not installed.",
                 Toast.LENGTH_SHORT
             ).show()
         }
