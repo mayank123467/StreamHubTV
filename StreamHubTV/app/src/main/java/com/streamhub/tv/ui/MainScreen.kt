@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.*
 import coil.compose.AsyncImage
+import com.streamhub.tv.model.AppLanguage
 import com.streamhub.tv.model.GenreCatalog
 import com.streamhub.tv.model.MediaItem
 import com.streamhub.tv.model.OttPlatform
@@ -60,16 +61,17 @@ private fun platformSubtitle(platform: OttPlatform): String = when (platform) {
 fun MainScreen(viewModel: StreamHubViewModel) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val heroItem = state.forYou.firstOrNull() ?: state.latest.firstOrNull() ?: state.youtubeTrending.firstOrNull()
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        colors = SurfaceDefaults.colors(containerColor = Color(0xFF0B0F19))
+        colors = SurfaceDefaults.colors(containerColor = Color(0xFF090D16))
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 36.dp, vertical = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 item {
                     Row(
@@ -85,10 +87,9 @@ fun MainScreen(viewModel: StreamHubViewModel) {
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = state.selectedPlatform?.let { "Showing: ${it.displayName}" }
-                                    ?: "All OTT Platforms",
+                                text = "${state.selectedPlatform?.displayName ?: "All OTT"} • ${state.selectedLanguage.label}",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFF94A3B8)
+                                color = Color(0xFF60A5FA)
                             )
                         }
                         Button(onClick = { viewModel.toggleInterestPicker(!state.showInterestPicker) }) {
@@ -99,7 +100,7 @@ fun MainScreen(viewModel: StreamHubViewModel) {
 
                 if (state.showInterestPicker) {
                     item {
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             items(GenreCatalog.genres) { (id, name) ->
                                 val selected = id in state.selectedGenres
                                 Button(
@@ -115,6 +116,91 @@ fun MainScreen(viewModel: StreamHubViewModel) {
                     }
                 }
 
+                if (heroItem != null && state.selectedPlatform != OttPlatform.JIO_TV) {
+                    item {
+                        val heroAccent = platformAccent(heroItem.platform)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(Color(0xFF161D2E))
+                        ) {
+                            if (heroItem.imageUrl.isNotBlank()) {
+                                AsyncImage(
+                                    model = heroItem.imageUrl,
+                                    contentDescription = heroItem.title,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(
+                                        Brush.horizontalGradient(
+                                            listOf(Color(0xEE090D16), Color(0xAA090D16), Color(0x33090D16))
+                                        )
+                                    )
+                            )
+                            Column(
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                                    .padding(20.dp)
+                                    .fillMaxWidth(0.78f),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "FEATURED • ${heroItem.platform.displayName.uppercase()}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color(0xFF38BDF8),
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = heroItem.title,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = heroItem.overview.ifBlank { "Top pick in ${state.selectedLanguage.label}" },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFFCBD5E1),
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Button(
+                                    onClick = { AppLauncher.openPlatform(context, heroItem.platform, heroItem.deepLinkUrl) },
+                                    colors = ButtonDefaults.colors(containerColor = heroAccent)
+                                ) {
+                                    Text("Watch Now", color = Color.White)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Language", style = MaterialTheme.typography.titleSmall, color = Color(0xFF94A3B8))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            items(AppLanguage.entries) { lang ->
+                                val selected = state.selectedLanguage == lang
+                                Button(
+                                    onClick = { viewModel.selectLanguage(lang) },
+                                    colors = ButtonDefaults.colors(
+                                        containerColor = if (selected) Color(0xFF2563EB) else Color(0xFF1E293B)
+                                    )
+                                ) {
+                                    Text(lang.label, color = Color.White)
+                                }
+                            }
+                        }
+                    }
+                }
+
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(
@@ -122,17 +208,13 @@ fun MainScreen(viewModel: StreamHubViewModel) {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "Filter by OTT App",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = Color.White
-                            )
+                            Text("Filter by OTT App", style = MaterialTheme.typography.titleMedium, color = Color.White)
                             state.selectedPlatform?.let { selected ->
                                 Button(
                                     onClick = { AppLauncher.openPlatform(context, selected) },
                                     colors = ButtonDefaults.colors(containerColor = platformAccent(selected))
                                 ) {
-                                    Text("Open ${selected.displayName} App", color = Color.White)
+                                    Text("Open ${selected.displayName}", color = Color.White)
                                 }
                             }
                         }
@@ -143,25 +225,18 @@ fun MainScreen(viewModel: StreamHubViewModel) {
                                 Card(
                                     onClick = { viewModel.selectPlatform(null) },
                                     modifier = Modifier
-                                        .width(120.dp)
-                                        .height(86.dp)
+                                        .width(110.dp)
+                                        .height(82.dp)
                                         .then(
                                             if (isAll) Modifier.border(2.dp, Color.White, RoundedCornerShape(12.dp))
                                             else Modifier
                                         )
                                 ) {
                                     Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(Color(0xFF1E293B)),
+                                        modifier = Modifier.fillMaxSize().background(Color(0xFF1E293B)),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(
-                                            text = "All OTT",
-                                            style = MaterialTheme.typography.titleSmall,
-                                            color = Color.White,
-                                            fontWeight = FontWeight.Bold
-                                        )
+                                        Text("All OTT", style = MaterialTheme.typography.titleSmall, color = Color.White, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
@@ -172,8 +247,8 @@ fun MainScreen(viewModel: StreamHubViewModel) {
                                 Card(
                                     onClick = { viewModel.selectPlatform(platform) },
                                     modifier = Modifier
-                                        .width(190.dp)
-                                        .height(86.dp)
+                                        .width(186.dp)
+                                        .height(82.dp)
                                         .then(
                                             if (isSelected) Modifier.border(2.dp, Color.White, RoundedCornerShape(12.dp))
                                             else Modifier
@@ -182,43 +257,20 @@ fun MainScreen(viewModel: StreamHubViewModel) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxSize()
-                                            .background(
-                                                Brush.horizontalGradient(
-                                                    listOf(accent.copy(alpha = 0.85f), Color(0xFF1E293B))
-                                                )
-                                            )
+                                            .background(Brush.horizontalGradient(listOf(accent.copy(alpha = 0.85f), Color(0xFF1E293B))))
                                             .padding(horizontal = 14.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
                                         Box(
-                                            modifier = Modifier
-                                                .size(44.dp)
-                                                .clip(CircleShape)
-                                                .background(Color.White.copy(alpha = 0.18f)),
+                                            modifier = Modifier.size(42.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.18f)),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Text(
-                                                text = platformShortTag(platform),
-                                                style = MaterialTheme.typography.titleSmall,
-                                                color = Color.White,
-                                                fontWeight = FontWeight.Bold
-                                            )
+                                            Text(platformShortTag(platform), style = MaterialTheme.typography.titleSmall, color = Color.White, fontWeight = FontWeight.Bold)
                                         }
                                         Column {
-                                            Text(
-                                                text = platform.displayName,
-                                                style = MaterialTheme.typography.titleSmall,
-                                                color = Color.White,
-                                                fontWeight = FontWeight.SemiBold
-                                            )
-                                            Text(
-                                                text = platformSubtitle(platform),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = Color(0xFFE2E8F0),
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
+                                            Text(platform.displayName, style = MaterialTheme.typography.titleSmall, color = Color.White, fontWeight = FontWeight.SemiBold)
+                                            Text(platformSubtitle(platform), style = MaterialTheme.typography.labelSmall, color = Color(0xFFE2E8F0), maxLines = 1, overflow = TextOverflow.Ellipsis)
                                         }
                                     }
                                 }
@@ -271,13 +323,11 @@ fun MainScreen(viewModel: StreamHubViewModel) {
             state.selectedItem?.let { item ->
                 val accent = platformAccent(item.platform)
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xCC000000)),
+                    modifier = Modifier.fillMaxSize().background(Color(0xCC000000)),
                     contentAlignment = Alignment.Center
                 ) {
                     Surface(
-                        modifier = Modifier.width(560.dp).padding(24.dp),
+                        modifier = Modifier.width(540.dp).padding(24.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = SurfaceDefaults.colors(containerColor = Color(0xFF161D2E))
                     ) {
@@ -329,65 +379,4 @@ private fun ContentRow(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(title, style = MaterialTheme.typography.titleMedium, color = Color.White)
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            items(items, key = { it.id }) { item ->
-                val accent = platformAccent(item.platform)
-                Card(
-                    onClick = { onSelect(item) },
-                    modifier = Modifier.width(176.dp).height(252.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color(0xFF161D2E))
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(175.dp)
-                        ) {
-                            if (item.imageUrl.isNotBlank()) {
-                                AsyncImage(
-                                    model = item.imageUrl,
-                                    contentDescription = item.title,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            } else {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(
-                                            Brush.verticalGradient(
-                                                listOf(accent.copy(alpha = 0.8f), Color(0xFF1E293B))
-                                            )
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = platformShortTag(item.platform),
-                                        style = MaterialTheme.typography.headlineMedium,
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-
-                            if (item.rating > 0) {
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .padding(6.dp)
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(Color(0xCC0F172A))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = "★ ${String.format("%.1f", item.rating)}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Color(0xFFFACC15)
-                                    )
-                                }
-                            }
-
-                         
+   
