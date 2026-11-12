@@ -12,11 +12,14 @@
 
     <queries>
         <package android:name="com.amazon.amazonvideo.livingroom" />
+        <package android:name="com.amazon.avod.thirdpartyclient" />
         <package android:name="com.google.android.youtube.tv" />
+        <package android:name="com.google.android.youtube" />
         <package android:name="in.startv.hotstar" />
         <package android:name="com.graymatrix.did" />
         <package android:name="com.sonyliv" />
         <package android:name="com.jio.jioplay.tv" />
+        <package android:name="com.jio.media.jiotv" />
     </queries>
 
     <application
@@ -28,8 +31,7 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true"
-            android:screenOrientation="landscape">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
