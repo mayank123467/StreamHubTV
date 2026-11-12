@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          if [ -f StreamHubTV_v2.zip ]; then unzip -o StreamHubTV_v2.zip; fi
+          if [ -f StreamHubTV_Final.zip ]; then unzip -o StreamHubTV_Final.zip; fi
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -26,4 +26,3 @@ jobs:
         with:
           name: StreamHubTV-APK
           path: StreamHubTV/app/build/outputs/apk/debug/app-debug.apk
-          
