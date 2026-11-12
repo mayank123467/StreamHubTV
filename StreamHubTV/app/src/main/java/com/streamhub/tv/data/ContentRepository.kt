@@ -25,36 +25,44 @@ class ContentRepository(context: Context) {
     fun hasApiKeys(): Boolean =
         BuildConfig.TMDB_API_KEY.isNotBlank() || BuildConfig.YOUTUBE_API_KEY.isNotBlank()
 
-    suspend fun fetchLatestOtt(): List<MediaItem> {
-        if (BuildConfig.TMDB_API_KEY.isBlank()) return sampleItems()
+    suspend fun fetchLatestOtt(platform: OttPlatform? = null): List<MediaItem> {
+        if (platform == OttPlatform.YOUTUBE || platform == OttPlatform.JIO_TV) return emptyList()
+        if (BuildConfig.TMDB_API_KEY.isBlank()) return sampleItems(platform)
+        val providers = platform?.tmdbProviderId?.toString() ?: "119|122|232|237"
         return try {
             val resp = NetworkModule.tmdb.discoverMovies(
                 apiKey = BuildConfig.TMDB_API_KEY,
+                providers = providers,
                 sortBy = "primary_release_date.desc"
             )
-            resp.results.mapIndexed { idx, dto -> dto.toMediaItem(idx) }
+            resp.results.mapIndexed { idx, dto -> dto.toMediaItem(idx, platform) }
         } catch (_: Exception) {
-            sampleItems()
+            sampleItems(platform)
         }
     }
 
-    suspend fun fetchMostRatedOtt(): List<MediaItem> {
-        if (BuildConfig.TMDB_API_KEY.isBlank()) return sampleItems().sortedByDescending { it.rating }
+    suspend fun fetchMostRatedOtt(platform: OttPlatform? = null): List<MediaItem> {
+        if (platform == OttPlatform.YOUTUBE || platform == OttPlatform.JIO_TV) return emptyList()
+        if (BuildConfig.TMDB_API_KEY.isBlank()) return sampleItems(platform).sortedByDescending { it.rating }
+        val providers = platform?.tmdbProviderId?.toString() ?: "119|122|232|237"
         return try {
             val resp = NetworkModule.tmdb.discoverMovies(
                 apiKey = BuildConfig.TMDB_API_KEY,
+                providers = providers,
                 sortBy = "vote_average.desc",
-                minVotes = 100
+                minVotes = 50
             )
             val tvResp = NetworkModule.tmdb.discoverTv(
                 apiKey = BuildConfig.TMDB_API_KEY,
-                sortBy = "vote_average.desc"
+                providers = providers,
+                sortBy = "vote_average.desc",
+                minVotes = 20
             )
             (resp.results + tvResp.results)
-                .mapIndexed { idx, dto -> dto.toMediaItem(idx) }
+                .mapIndexed { idx, dto -> dto.toMediaItem(idx, platform) }
                 .sortedByDescending { it.rating }
         } catch (_: Exception) {
-            sampleItems()
+            sampleItems(platform)
         }
     }
 
@@ -79,14 +87,14 @@ class ContentRepository(context: Context) {
         }
     }
 
-    private fun TmdbMovieDto.toMediaItem(index: Int): MediaItem {
+    private fun TmdbMovieDto.toMediaItem(index: Int, forcedPlatform: OttPlatform?): MediaItem {
         val ottPool = listOf(
             OttPlatform.JIO_HOTSTAR,
             OttPlatform.PRIME_VIDEO,
             OttPlatform.ZEE5,
             OttPlatform.SONY_LIV
         )
-        val platform = ottPool[index % ottPool.size]
+        val platform = forcedPlatform ?: ottPool[index % ottPool.size]
         val poster = poster_path ?: backdrop_path
         val fullImg = if (poster != null) "https://image.tmdb.org/t/p/w500$poster" else ""
         return MediaItem(
@@ -102,50 +110,13 @@ class ContentRepository(context: Context) {
         )
     }
 
-    private fun sampleItems(): List<MediaItem> = listOf(
-        MediaItem(
-            id = "s1",
-            title = "Add TMDB API Key to Load Live Catalog",
-            overview = "Follow the setup guide to connect TMDB & YouTube API keys in GitHub Secrets.",
-            imageUrl = "",
-            rating = 8.5,
-            releaseDate = "2026",
-            platform = OttPlatform.JIO_HOTSTAR,
-            deepLinkUrl = OttPlatform.JIO_HOTSTAR.fallbackWebUrl,
-            genreIds = listOf(28, 53)
-        ),
-        MediaItem(
-            id = "s2",
-            title = "Prime Video Quick Launch",
-            overview = "Opens Prime Video directly on your Android TV.",
-            imageUrl = "",
-            rating = 8.2,
-            releaseDate = "2026",
-            platform = OttPlatform.PRIME_VIDEO,
-            deepLinkUrl = OttPlatform.PRIME_VIDEO.fallbackWebUrl,
-            genreIds = listOf(18, 35)
-        ),
-        MediaItem(
-            id = "s3",
-            title = "ZEE5 Quick Launch",
-            overview = "Opens ZEE5 directly on your Android TV.",
-            imageUrl = "",
-            rating = 7.9,
-            releaseDate = "2026",
-            platform = OttPlatform.ZEE5,
-            deepLinkUrl = OttPlatform.ZEE5.fallbackWebUrl,
-            genreIds = listOf(35, 10751)
-        ),
-        MediaItem(
-            id = "s4",
-            title = "SonyLIV Quick Launch",
-            overview = "Opens SonyLIV directly on your Android TV.",
-            imageUrl = "",
-            rating = 8.4,
-            releaseDate = "2026",
-            platform = OttPlatform.SONY_LIV,
-            deepLinkUrl = OttPlatform.SONY_LIV.fallbackWebUrl,
-            genreIds = listOf(53, 878)
+    private fun sampleItems(platform: OttPlatform?): List<MediaItem> {
+        val all = listOf(
+            MediaItem("s1", "JioHotstar Catalog (Check Internet / DNS)", "Could not reach TMDB. Try Wi-Fi or Private DNS dns.google.", "", 8.5, "2026", OttPlatform.JIO_HOTSTAR, OttPlatform.JIO_HOTSTAR.fallbackWebUrl, listOf(28, 53)),
+            MediaItem("s2", "Prime Video Catalog", "Open Prime Video directly on your device.", "", 8.2, "2026", OttPlatform.PRIME_VIDEO, OttPlatform.PRIME_VIDEO.fallbackWebUrl, listOf(18, 35)),
+            MediaItem("s3", "ZEE5 Catalog", "Open ZEE5 directly on your device.", "", 7.9, "2026", OttPlatform.ZEE5, OttPlatform.ZEE5.fallbackWebUrl, listOf(35, 10751)),
+            MediaItem("s4", "SonyLIV Catalog", "Open SonyLIV directly on your device.", "", 8.4, "2026", OttPlatform.SONY_LIV, OttPlatform.SONY_LIV.fallbackWebUrl, listOf(53, 878))
         )
-    )
+        return if (platform == null) all else all.filter { it.platform == platform }
+    }
 }
