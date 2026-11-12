@@ -3,15 +3,16 @@ package com.streamhub.tv.model
 enum class OttPlatform(
     val displayName: String,
     val packageName: String,
+    val mobilePackageName: String,
     val tmdbProviderId: Int? = null,
     val fallbackWebUrl: String
 ) {
-    JIO_HOTSTAR("JioHotstar", "in.startv.hotstar", 122, "https://www.hotstar.com"),
-    PRIME_VIDEO("Prime Video", "com.amazon.amazonvideo.livingroom", 119, "https://www.primevideo.com"),
-    ZEE5("ZEE5", "com.graymatrix.did", 232, "https://www.zee5.com"),
-    SONY_LIV("SonyLIV", "com.sonyliv", 237, "https://www.sonyliv.com"),
-    YOUTUBE("YouTube", "com.google.android.youtube.tv", null, "https://www.youtube.com"),
-    JIO_TV("JioTV", "com.jio.jioplay.tv", null, "https://jiotv.com")
+    JIO_HOTSTAR("JioHotstar", "in.startv.hotstar", "in.startv.hotstar", 122, "https://www.hotstar.com"),
+    PRIME_VIDEO("Prime Video", "com.amazon.amazonvideo.livingroom", "com.amazon.avod.thirdpartyclient", 119, "https://www.primevideo.com"),
+    ZEE5("ZEE5", "com.graymatrix.did", "com.graymatrix.did", 232, "https://www.zee5.com"),
+    SONY_LIV("SonyLIV", "com.sonyliv", "com.sonyliv", 237, "https://www.sonyliv.com"),
+    YOUTUBE("YouTube", "com.google.android.youtube.tv", "com.google.android.youtube", null, "https://www.youtube.com"),
+    JIO_TV("JioTV", "com.jio.jioplay.tv", "com.jio.media.jiotv", null, "https://jiotv.com")
 }
 
 data class MediaItem(
