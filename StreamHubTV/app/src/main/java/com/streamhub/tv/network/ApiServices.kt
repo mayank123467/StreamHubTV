@@ -27,7 +27,9 @@ interface TmdbApi {
         @Query("watch_region") region: String = "IN",
         @Query("with_watch_providers") providers: String = "119|122|232|237",
         @Query("sort_by") sortBy: String = "primary_release_date.desc",
-        @Query("vote_count.gte") minVotes: Int = 5
+        @Query("vote_count.gte") minVotes: Int = 5,
+        @Query("language") language: String = "en-IN",
+        @Query("with_original_language") originalLanguage: String? = null
     ): TmdbResponse
 
     @GET("3/discover/tv")
@@ -36,12 +38,19 @@ interface TmdbApi {
         @Query("watch_region") region: String = "IN",
         @Query("with_watch_providers") providers: String = "119|122|232|237",
         @Query("sort_by") sortBy: String = "vote_average.desc",
-        @Query("vote_count.gte") minVotes: Int = 30
+        @Query("vote_count.gte") minVotes: Int = 20,
+        @Query("language") language: String = "en-IN",
+        @Query("with_original_language") originalLanguage: String? = null
     ): TmdbResponse
 }
 
 data class YouTubeResponse(val items: List<YouTubeVideoDto> = emptyList())
 data class YouTubeVideoDto(val id: String, val snippet: YouTubeSnippet)
+
+data class YouTubeSearchResponse(val items: List<YouTubeSearchDto> = emptyList())
+data class YouTubeSearchDto(val id: YouTubeSearchId, val snippet: YouTubeSnippet)
+data class YouTubeSearchId(val videoId: String? = null)
+
 data class YouTubeSnippet(
     val title: String,
     val description: String,
@@ -60,6 +69,18 @@ interface YouTubeApi {
         @Query("maxResults") maxResults: Int = 15,
         @Query("key") apiKey: String
     ): YouTubeResponse
+
+    @GET("youtube/v3/search")
+    suspend fun searchByLanguage(
+        @Query("part") part: String = "snippet",
+        @Query("type") type: String = "video",
+        @Query("order") order: String = "viewCount",
+        @Query("regionCode") regionCode: String = "IN",
+        @Query("relevanceLanguage") relevanceLanguage: String,
+        @Query("q") query: String,
+        @Query("maxResults") maxResults: Int = 15,
+        @Query("key") apiKey: String
+    ): YouTubeSearchResponse
 }
 
 object NetworkModule {
