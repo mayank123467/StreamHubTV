@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.streamhub.tv.data.ContentRepository
+import com.streamhub.tv.model.AppLanguage
 import com.streamhub.tv.model.MediaItem
 import com.streamhub.tv.model.OttPlatform
 import kotlinx.coroutines.async
@@ -16,6 +17,7 @@ data class HubUiState(
     val isLoading: Boolean = true,
     val hasApiKeys: Boolean = false,
     val selectedPlatform: OttPlatform? = null,
+    val selectedLanguage: AppLanguage = AppLanguage.ALL,
     val latest: List<MediaItem> = emptyList(),
     val mostRated: List<MediaItem> = emptyList(),
     val forYou: List<MediaItem> = emptyList(),
@@ -42,15 +44,21 @@ class StreamHubViewModel(app: Application) : AndroidViewModel(app) {
         refresh()
     }
 
+    fun selectLanguage(language: AppLanguage) {
+        _state.value = _state.value.copy(selectedLanguage = language)
+        refresh()
+    }
+
     fun refresh() {
         val currentPlatform = _state.value.selectedPlatform
+        val currentLang = _state.value.selectedLanguage
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
-            val latestDeferred = async { repo.fetchLatestOtt(currentPlatform) }
-            val ratedDeferred = async { repo.fetchMostRatedOtt(currentPlatform) }
+            val latestDeferred = async { repo.fetchLatestOtt(currentPlatform, currentLang) }
+            val ratedDeferred = async { repo.fetchMostRatedOtt(currentPlatform, currentLang) }
             val ytDeferred = async {
                 if (currentPlatform == null || currentPlatform == OttPlatform.YOUTUBE) {
-                    repo.fetchYouTubeTrending()
+                    repo.fetchYouTubeTrending(currentLang)
                 } else {
                     emptyList()
                 }
